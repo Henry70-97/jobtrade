@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join BestPay – Register or Sign In</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen">
+    <div class="container mx-auto px-4 py-12">
+        <div class="max-w-md mx-auto">
+            <div class="text-center mb-8">
+                <i class="fas fa-chart-line text-4xl text-indigo-600"></i>
+                <h1 class="text-3xl font-extrabold mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">BestPay</h1>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                <div class="bg-gradient-to-r from-indigo-600 to-purple-700 p-5 text-center">
+                    <i class="fas fa-wallet text-4xl text-yellow-200 mb-2"></i>
+                    <h2 id="formTitle" class="text-2xl font-bold text-white">Create Account</h2>
+                    <p class="text-indigo-100 text-sm">Get $20 bonus instantly</p>
+                </div>
+                <div class="p-6">
+                    <!-- Registration Form -->
+                    <div id="registerForm">
+                        <div class="space-y-4">
+                            <div><label class="block text-sm font-medium">Full Name *</label><input type="text" id="regName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+                            <div><label class="block text-sm font-medium">Email *</label><input type="email" id="regEmail" class="w-full px-4 py-2 border rounded-lg"></div>
+                            <div><label class="block text-sm font-medium">Password *</label><input type="password" id="regPassword" class="w-full px-4 py-2 border rounded-lg" placeholder="Min 6 chars"></div>
+                            <div><label class="block text-sm font-medium">Referral Code (optional)</label><input type="text" id="regReferral" class="w-full px-4 py-2 border rounded-lg"></div>
+                            <div class="flex items-start gap-2"><input type="checkbox" id="termsCheckbox" class="mt-1"><label class="text-sm">I agree to <button type="button" onclick="showTermsModal()" class="text-indigo-600 underline">Terms</button></label></div>
+                            <button onclick="handleRegister()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg">📝 Register & Get $20</button>
+                            <p id="regMessage" class="text-sm text-center text-red-500"></p>
+                            
+                            <!-- Divider -->
+                            <div class="relative my-4"><div class="absolute inset-0 flex items-center"><div class="w-full border-t"></div></div><div class="relative flex justify-center text-xs"><span class="bg-white px-2 text-gray-500">OR</span></div></div>
+                            
+                            <!-- Google Sign-In Button -->
+                            <button onclick="handleGoogleSignIn()" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 transition"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5"> Sign in with Google</button>
+                            
+                            <div class="text-center mt-4"><button onclick="showLoginForm()" class="text-indigo-600 hover:underline">Already have an account? Sign In</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Login Form (hidden) -->
+                    <div id="loginForm" class="hidden">
+                        <div class="space-y-4">
+                            <div><label class="block text-sm font-medium">Email</label><input type="email" id="loginEmail" class="w-full px-4 py-2 border rounded-lg"></div>
+                            <div><label class="block text-sm font-medium">Password</label><input type="password" id="loginPassword" class="w-full px-4 py-2 border rounded-lg"></div>
+                            <button onclick="handleLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg">🔑 Sign In</button>
+                            <div class="relative my-4"><div class="absolute inset-0 flex items-center"><div class="w-full border-t"></div></div><div class="relative flex justify-center text-xs"><span class="bg-white px-2 text-gray-500">OR</span></div></div>
+                            <button onclick="handleGoogleSignIn()" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5"> Sign in with Google</button>
+                            <p id="loginMessage" class="text-sm text-center text-red-500"></p>
+                            <div class="text-center"><button onclick="showRegisterForm()" class="text-indigo-600 hover:underline">No account? Create one (Free $20)</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDtGN7KCK0A4fhztLN0CgxsKkGROcO_-vI",
+            authDomain: "bestpay-5b78c.firebaseapp.com",
+            projectId: "bestpay-5b78c",
+            storageBucket: "bestpay-5b78c.firebasestorage.app",
+            messagingSenderId: "583230068716",
+            appId: "1:583230068716:web:3e8d298b4d00b46c8652c9"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        function generateReferralCode() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
+
+        // Redirect if already logged in
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const role = userDoc.data().role;
+                    window.location.href = role === "admin" ? "admin.html" : "dashboard.html";
+                }
+            }
+        });
+
+        // Shared user creation logic
+        async function createOrUpdateUser(user, name, referralCodeFromInput, isNewUser = true) {
+            const uid = user.uid;
+            const userDoc = await getDoc(doc(db, "users", uid));
+            if (!userDoc.exists()) {
+                const usersSnapshot = await getDocs(collection(db, "users"));
+                const isFirstUser = usersSnapshot.empty;
+                const role = isFirstUser ? "admin" : "user";
+                const newReferralCode = generateReferralCode();
+                await setDoc(doc(db, "users", uid), {
+                    email: user.email, displayName: name || user.displayName || "User",
+                    createdAt: serverTimestamp(), referralCode: newReferralCode,
+                    referredBy: referralCodeFromInput || null, kycStatus: "unverified",
+                    isSuspended: false, isFrozen: false, role: role,
+                    totalEarned: 20, realBalance: 20, demoBalance: 10000, totalWithdrawn: 0
+                });
+                await setDoc(doc(db, "wallets", uid), {
+                    investedBalance: 0, bonusBalance: 20, totalDeposited: 0, lastUpdated: serverTimestamp()
+                });
+                await setDoc(doc(db, "login_streaks", uid), {
+                    currentStreak: 1, longestStreak: 1, lastLoginDate: new Date().toISOString().split('T')[0], bonusClaimedToday: true
+                });
+                if (referralCodeFromInput) {
+                    const q = query(collection(db, "users"), where("referralCode", "==", referralCodeFromInput));
+                    const qSnap = await getDocs(q);
+                    if (!qSnap.empty) {
+                        await addDoc(collection(db, "referrals"), {
+                            referrerId: qSnap.docs[0].id, referredId: uid, commissionEarned: 2,
+                            status: "approved", commissionRate: 10, createdAt: serverTimestamp()
+                        });
+                        const referrerRef = doc(db, "users", qSnap.docs[0].id);
+                        const referrerSnap = await getDoc(referrerRef);
+                        if (referrerSnap.exists()) {
+                            await updateDoc(referrerRef, { realBalance: (referrerSnap.data().realBalance || 0) + 2 });
+                        }
+                    }
+                }
+                return role;
+            }
+            return userDoc.data().role;
+        }
+
+        window.handleGoogleSignIn = async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+                let name = user.displayName;
+                let email = user.email;
+                let referralInput = document.getElementById('regReferral')?.value.trim() || null;
+                const role = await createOrUpdateUser(user, name, referralInput, true);
+                window.location.href = role === "admin" ? "admin.html" : "dashboard.html";
+            } catch (error) {
+                document.getElementById('regMessage').innerText = `Google Sign-In error: ${error.message}`;
+            }
+        };
+
+        window.showLoginForm = () => {
+            document.getElementById("registerForm").classList.add("hidden");
+            document.getElementById("loginForm").classList.remove("hidden");
+            document.getElementById("formTitle").innerText = "Welcome Back";
+        };
+        window.showRegisterForm = () => {
+            document.getElementById("loginForm").classList.add("hidden");
+            document.getElementById("registerForm").classList.remove("hidden");
+            document.getElementById("formTitle").innerText = "Create Account";
+        };
+
+        window.showTermsModal = () => {
+            const modalHtml = `<div id="termsModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto p-6"><h2 class="text-2xl font-bold mb-3">Terms & Conditions</h2><div class="space-y-2 text-sm">${Array(20).fill().map((_,i)=>`<p><strong>${i+1}.</strong> Clause ${i+1} description...</p>`).join('')}</div><button onclick="this.closest('#termsModal').remove()" class="mt-4 bg-indigo-600 text-white px-6 py-2 rounded">Close</button></div></div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        };
+
+        window.handleRegister = async () => {
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const referralCode = document.getElementById('regReferral').value.trim();
+            const termsOk = document.getElementById('termsCheckbox').checked;
+            const msgEl = document.getElementById('regMessage');
+            if (!name || !email || !password) { msgEl.innerText = '❌ All fields required.'; return; }
+            if (password.length < 6) { msgEl.innerText = '❌ Password >=6 characters.'; return; }
+            if (!termsOk) { msgEl.innerText = '❌ Accept Terms.'; return; }
+            msgEl.innerText = '⏳ Creating...';
+            try {
+                const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCred.user, { displayName: name });
+                const role = await createOrUpdateUser(userCred.user, name, referralCode, true);
+                msgEl.innerText = '✅ Success! Redirecting...';
+                setTimeout(() => { window.location.href = role === "admin" ? "admin.html" : "dashboard.html"; }, 1500);
+            } catch (error) { msgEl.innerText = `⚠️ ${error.message}`; }
+        };
+
+        window.handleLogin = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const msgEl = document.getElementById('loginMessage');
+            if (!email || !password) { msgEl.innerText = 'Fill all fields'; return; }
+            msgEl.innerText = 'Signing in...';
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged will redirect
+            } catch (err) { msgEl.innerText = err.message; }
+        };
+    </script>
+</body>
+</html>
